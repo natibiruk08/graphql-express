@@ -1,8 +1,7 @@
 import { Express, Request, Response } from "express";
 
-const routerSetup = (app: Express) =>
-  app.get("/", async (req: Request, res: Response) => {
-    res.send("Hello Express APIvantage!");
-  });
+import { graphQLMiddleware } from "../graphql";
+
+const routerSetup = (app: Express) => app.use("/graphql", graphQLMiddleware);
 
 export default routerSetup;
