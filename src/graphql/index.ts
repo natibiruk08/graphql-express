@@ -8,6 +8,8 @@ import {
 
 import userData from "../constants/userData.json";
 import { graphqlHTTP } from "express-graphql";
+import { useTypeORM } from "../database";
+import { User } from "../database/models/User";
 
 const UserType = new GraphQLObjectType({
   name: "User",
@@ -15,10 +17,7 @@ const UserType = new GraphQLObjectType({
     id: {
       type: GraphQLInt,
     },
-    firstName: {
-      type: GraphQLString,
-    },
-    lastName: {
+    username: {
       type: GraphQLString,
     },
     email: {
@@ -26,6 +25,12 @@ const UserType = new GraphQLObjectType({
     },
     password: {
       type: GraphQLString,
+    },
+    created_at: {
+      type: GraphQLInt,
+    },
+    updated_at: {
+      type: GraphQLInt,
     },
   }),
 });
@@ -35,8 +40,8 @@ const RootQuery = new GraphQLObjectType({
   fields: {
     getAllUsers: {
       type: new GraphQLList(UserType),
-      resolve(parent, args) {
-        return userData;
+      async resolve(parent, args) {
+        return await useTypeORM(User).find();
       },
     },
     getUser: {
@@ -44,8 +49,8 @@ const RootQuery = new GraphQLObjectType({
       args: {
         id: { type: GraphQLInt },
       },
-      resolve(parent, { id }) {
-        return userData.find((user) => user.id == id);
+      async resolve(parent, { id }) {
+        return await useTypeORM(User).find({ where: { id } });
       },
     },
   },
