@@ -1,9 +1,9 @@
 import { Express } from "express";
-import connectToDatabase from "../database";
+import dbConnection from "../database";
 
 const appSetup = async (app: Express) => {
   try {
-    await connectToDatabase();
+    await dbConnection.connect();
 
     console.log("Database connected successfully!");
     const APP_PORT = Number(process.env.APP_PORT) || 3000;

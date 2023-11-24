@@ -5,11 +5,9 @@ import {
   GraphQLSchema,
   GraphQLString,
 } from "graphql";
-
-import userData from "../constants/userData.json";
 import { graphqlHTTP } from "express-graphql";
-import { useTypeORM } from "../database";
-import { User } from "../database/models/User";
+
+import { dbQuery } from "../database";
 
 const UserType = new GraphQLObjectType({
   name: "User",
@@ -27,10 +25,10 @@ const UserType = new GraphQLObjectType({
       type: GraphQLString,
     },
     created_at: {
-      type: GraphQLInt,
+      type: GraphQLString,
     },
     updated_at: {
-      type: GraphQLInt,
+      type: GraphQLString,
     },
   }),
 });
@@ -41,7 +39,7 @@ const RootQuery = new GraphQLObjectType({
     getAllUsers: {
       type: new GraphQLList(UserType),
       async resolve(parent, args) {
-        return await useTypeORM(User).find();
+        return await dbQuery("SELECT * FROM public.user");
       },
     },
     getUser: {
@@ -50,7 +48,11 @@ const RootQuery = new GraphQLObjectType({
         id: { type: GraphQLInt },
       },
       async resolve(parent, { id }) {
-        return await useTypeORM(User).find({ where: { id } });
+        const user = await dbQuery(
+          "SELECT * FROM public.user WHERE id=$1 LIMIT 1",
+          [id]
+        );
+        return user[0];
       },
     },
   },
@@ -62,21 +64,21 @@ const Mutation = new GraphQLObjectType({
     createUser: {
       type: UserType,
       args: {
-        firstName: { type: GraphQLString },
-        lastName: { type: GraphQLString },
+        username: { type: GraphQLString },
         email: { type: GraphQLString },
         password: { type: GraphQLString },
       },
-      resolve(parent, args) {
-        userData.push({
-          id: userData.length + 1,
-          firstName: args.firstName,
-          lastName: args.lastName,
-          email: args.email,
-          password: args.password,
-        });
+      async resolve(parent, { username, email, password }) {
+        const query = `
+          INSERT INTO public.user (username, email, password)
+          VALUES ($1, $2, $3)
+          RETURNING *
+        `;
+        const values = [username, email, password];
 
-        return args;
+        const result = await dbQuery(query, values);
+        console.log(result);
+        return result[0];
       },
     },
   },
